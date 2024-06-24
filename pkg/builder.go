@@ -2,6 +2,7 @@ package ch
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -10,14 +11,15 @@ import (
 // 	int64
 // }
 
-// type AcceptedValues interface {
-// 	int64 | string
-// }
+//	type AcceptedValues interface {
+//		int64 | string
+//	}
 
 type Cache struct {
 	cacheInitializationTime time.Time
 	maxCacheSize            int
-	cache                   map[string]string 
+	cache                   map[string]string
+	mutex                   sync.RWMutex
 }
 
 func (c *Cache) Set(key string, values ...string) {
@@ -27,23 +29,39 @@ func (c *Cache) Set(key string, values ...string) {
 	} else {
 		value = time.Now().Format(layout)
 	}
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	c.cache[key] = value
 }
 
 func (c *Cache) Delete(key string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	delete(c.cache, key)
 }
 
-func (c Cache) Get(key string) (string, bool) {
+func (c *Cache) Get(key string) (string, bool) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
 	value, found := c.cache[key]
 	return value, found
 }
 
-func (c Cache) GetAll() map[string]string {
-	return c.cache
+func (c *Cache) GetAll() map[string]string {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	m := make(map[string]string, len(c.cache))
+	for k, v := range c.cache {
+		m[k] = v
+	}
+	return m
 }
 
-func (c Cache) IsValueExists(key string) bool {
+func (c *Cache) IsValueExists(key string) bool {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	_, ok := c.Get(key)
 	if ok {
 		return true
@@ -52,7 +70,9 @@ func (c Cache) IsValueExists(key string) bool {
 	}
 }
 
-func (c Cache) IsCacheFull() bool {
+func (c *Cache) IsCacheFull() bool {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	if len(c.cache) == c.maxCacheSize {
 		return true
 	} else {
@@ -60,6 +80,7 @@ func (c Cache) IsCacheFull() bool {
 	}
 }
 
+// Not implmenting thread safety here, as it is not required. Assuming cache is build once.
 // CacheBuilder for choosy cache building, implemented builder and director pattern for scaling in case you need more fields in Cache types and more combo of cache building.
 type CacheBuilder interface {
 	Set(key string, value string) CacheBuilder

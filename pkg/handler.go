@@ -18,7 +18,8 @@ func (c *Cache) LRU(key string) *Cache {
 	// The first value is the thing, example "watches", second is the time it was added.
 	var oldestTime time.Time
 	var delkey string
-	for k, v := range c.cache {
+	m := c.GetAll()
+	for k, v := range m {
 		parsedTime, err := time.Parse(layout, v)
 		if err != nil {
 			fmt.Println(err)
@@ -49,7 +50,8 @@ func (c *Cache) LIFO(key string) *Cache {
 
 	var recentTime time.Time
 	var delkey string
-	for k, v := range c.cache {
+	m := c.GetAll()
+	for k, v := range m {
 		parsedTime, err := time.Parse(layout, v)
 		if err != nil {
 			fmt.Println(err)
@@ -75,7 +77,8 @@ func (c *Cache) FIFO(key string) *Cache {
 
 	var latestTime time.Time
 	var oldestkey string
-	for k, v := range c.cache {
+	m := c.GetAll()
+	for k, v := range m {
 		parsedTime, err := time.Parse(layout, v)
 		if err != nil {
 			fmt.Println(err)
@@ -108,7 +111,8 @@ func (c *Cache) LFU(key string) *Cache {
 
 	var lowestFreq int
 	var leastFreqKey string
-	for k, v := range c.cache {
+	m := c.GetAll()
+	for k, v := range m {
 		i, err := strconv.Atoi(v)
 		if err != nil {
 			fmt.Println(err)
@@ -134,7 +138,8 @@ func (c *Cache) MRU(key string) *Cache {
 
 	var recentTime time.Time
 	var delkey string
-	for k, v := range c.cache {
+	m := c.GetAll()
+	for k, v := range m {
 		parsedTime, err := time.Parse(layout, v)
 		if err != nil {
 			fmt.Println(err)
