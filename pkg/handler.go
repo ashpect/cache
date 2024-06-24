@@ -75,8 +75,8 @@ func (c *Cache) FIFO(key string) *Cache {
 
 	var latestTime time.Time
 	var oldestkey string
-	for k, _ := range c.cache {
-		parsedTime, err := time.Parse(layout, k)
+	for k, v := range c.cache {
+		parsedTime, err := time.Parse(layout, v)
 		if err != nil {
 			fmt.Println(err)
 		}
