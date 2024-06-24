@@ -1,36 +1,69 @@
 package ch
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
-type AcceptedKeys interface {
-	int64
-}
+// Go generics not really helful in this case
+// type AcceptedKeys interface {
+// 	int64
+// }
 
-type AcceptedValues interface {
-	int64 | string
-}
+// type AcceptedValues interface {
+// 	int64 | string
+// }
 
-// change this to cache handler very late which access cache directly somewhere
 type Cache struct {
-	cache map[string]string
+	cacheInitializationTime time.Time
+	maxCacheSize            int
+	cache                   map[string]string 
 }
 
-func (c *Cache) Set(key string, value string) {
+func (c *Cache) Set(key string, values ...string) {
+	var value string
+	if len(values) > 0 {
+		value = values[0]
+	} else {
+		value = time.Now().Format(layout)
+	}
 	c.cache[key] = value
+}
+
+func (c *Cache) Delete(key string) {
+	delete(c.cache, key)
 }
 
 func (c Cache) Get(key string) (string, bool) {
 	value, found := c.cache[key]
-	fmt.Println(len(c.cache))
-	for k, v := range c.cache {
-		fmt.Println(k, v)
-	}
 	return value, found
 }
 
-// CacheBuilder for choosy cache building
+func (c Cache) GetAll() map[string]string {
+	return c.cache
+}
+
+func (c Cache) IsValueExists(key string) bool {
+	_, ok := c.Get(key)
+	if ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (c Cache) IsCacheFull() bool {
+	if len(c.cache) == c.maxCacheSize {
+		return true
+	} else {
+		return false
+	}
+}
+
+// CacheBuilder for choosy cache building, implemented builder and director pattern for scaling in case you need more fields in Cache types and more combo of cache building.
 type CacheBuilder interface {
-	Set(string, string) CacheBuilder
+	Set(key string, value string) CacheBuilder
+	SetSize(size int) CacheBuilder
 	Build() *Cache
 }
 
@@ -43,14 +76,18 @@ func (b *cacheBuilder) Set(key string, value string) CacheBuilder {
 	return b
 }
 
+func (b *cacheBuilder) SetSize(size int) CacheBuilder {
+	b.cache.maxCacheSize = size
+	return b
+}
+
 func (b *cacheBuilder) Build() *Cache {
 	return b.cache
 }
 
-// TODO : Handle building a fixed map size to emulate actual cache, write a wrapper
-func NewCacheBuilder(size int) CacheBuilder {
+func NewCacheBuilder() CacheBuilder {
 	return &cacheBuilder{
-		cache: &Cache{cache: make(map[string]string, size)},
+		cache: &Cache{cache: make(map[string]string)},
 	}
 }
 
@@ -58,13 +95,22 @@ type Director struct {
 	builder CacheBuilder
 }
 
-func (d *Director) ConstructStandard() *Cache {
-	return d.builder.Build()
+func (d *Director) ConstructEmpty() *Cache {
+	cache := d.builder.Build()
+	cache.maxCacheSize = defaultCacheSize
+	return cache
+
 }
 
-func (d *Director) ConstructManual(m map[string]string) *Cache {
+func (d *Director) ConstructManual(m map[string]string, size int) *Cache {
 	cache := d.builder.Build()
+	if len(m) > size {
+		fmt.Println("Cache size is less than the map size, not initialized.")
+		return nil
+	}
+
 	cache.cache = m
+	cache.maxCacheSize = size
 	return cache
 }
 
