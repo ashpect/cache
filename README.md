@@ -18,4 +18,3 @@ You can write your own policy by implementing your logic as per the boilerplate 
 ### Misc
 - [x] Implement example in main.go 
 - [ ] Add test for thread safety for learning purposes
-
