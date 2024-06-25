@@ -101,6 +101,7 @@ func ExampleLFU() {
 		{name: "test3", value: 3},
 		{name: "test4", value: 4},
 		{name: "test5", value: 5},
+		{name: "test6", value: 6},
 	}
 	for _, v := range testioArray {
 		d = d.LFU(v)
