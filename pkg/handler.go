@@ -2,11 +2,10 @@ package ch
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 )
 
-func (c *Cache) LRU(key string) *Cache {
+func (c *Cache) LRU(key interface{}) *Cache {
 
 	// Abstracting cache hit and updation is not required and would make things complicated, since cache value updation is dependent on policy.
 	// Hence provided freedom to update logic in the policy.
@@ -17,13 +16,14 @@ func (c *Cache) LRU(key string) *Cache {
 
 	// The first value is the thing, example "watches", second is the time it was added.
 	var oldestTime time.Time
-	var delkey string
+	var delkey interface{}
 	m := c.GetAll()
 	for k, v := range m {
-		parsedTime, err := time.Parse(layout, v)
-		if err != nil {
-			fmt.Println(err)
+		parsedTime, ok := v.(time.Time)
+		if !ok {
+			panic(fmt.Errorf("Value %v is not a time format: %v\n", k, v))
 		}
+
 		if parsedTime.Before(oldestTime) {
 			oldestTime = parsedTime
 			delkey = k
@@ -36,7 +36,7 @@ func (c *Cache) LRU(key string) *Cache {
 	return c
 }
 
-func (c *Cache) LIFO(key string) *Cache {
+func (c *Cache) LIFO(key interface{}) *Cache {
 
 	if c.IsValueExists(key) {
 		// Time not updated to 'access time', kept as the added time
@@ -49,12 +49,12 @@ func (c *Cache) LIFO(key string) *Cache {
 	}
 
 	var recentTime time.Time
-	var delkey string
+	var delkey interface{}
 	m := c.GetAll()
 	for k, v := range m {
-		parsedTime, err := time.Parse(layout, v)
-		if err != nil {
-			fmt.Println(err)
+		parsedTime, ok := v.(time.Time)
+		if !ok {
+			panic(fmt.Errorf("Value %v is not a time format: %v\n", k, v))
 		}
 		if parsedTime.After(recentTime) {
 			recentTime = parsedTime
@@ -68,7 +68,7 @@ func (c *Cache) LIFO(key string) *Cache {
 	return c
 }
 
-func (c *Cache) FIFO(key string) *Cache {
+func (c *Cache) FIFO(key interface{}) *Cache {
 
 	if c.IsValueExists(key) {
 		// Time not updated to 'access time', kept as the added time
@@ -76,12 +76,12 @@ func (c *Cache) FIFO(key string) *Cache {
 	}
 
 	var latestTime time.Time
-	var oldestkey string
+	var oldestkey interface{}
 	m := c.GetAll()
 	for k, v := range m {
-		parsedTime, err := time.Parse(layout, v)
-		if err != nil {
-			fmt.Println(err)
+		parsedTime, ok := v.(time.Time)
+		if !ok {
+			panic(fmt.Errorf("Value %v is not a time format: %v\n", k, v))
 		}
 		if parsedTime.Before(latestTime) {
 			latestTime = parsedTime
@@ -95,41 +95,43 @@ func (c *Cache) FIFO(key string) *Cache {
 	return c
 }
 
-func (c *Cache) LFU(key string) *Cache {
+func (c *Cache) LFU(key interface{}) *Cache {
 
-	// The first value is the thing, example "shoes", second is the frquency.
-	v, ok := c.Get(key)
-	if ok {
-		i, err := strconv.Atoi(v)
-		if err != nil {
-			fmt.Println(err)
+	if c.IsValueExists(key) {
+		v, _ := c.Get(key)
+		intValue, ok := v.(int)
+		if !ok {
+			panic(fmt.Errorf("Value %v is not an int", v))
 		}
-		i++
-		c.Set(key, strconv.Itoa(i))
+		intValue++
+		c.Set(key, intValue)
 		return c
 	}
 
-	var lowestFreq int
-	var leastFreqKey string
-	m := c.GetAll()
-	for k, v := range m {
-		i, err := strconv.Atoi(v)
-		if err != nil {
-			fmt.Println(err)
+	// The first value is the thing, example "shoes", second is the frquency.
+	if !c.IsCacheFull() {
+		c.Set(key, 1)
+	} else {
+		var lowestFreq int = 1e9
+		var leastFreqKey interface{}
+		m := c.GetAll()
+		for k, v := range m {
+			intValue, ok := v.(int)
+			if !ok {
+				panic(fmt.Errorf("Value for key %v is not a string: %v\n", k, v))
+			}
+			if intValue < lowestFreq {
+				lowestFreq = intValue
+				leastFreqKey = k
+			}
 		}
-		if i < lowestFreq {
-			lowestFreq = i
-			leastFreqKey = k
-		}
+		c.Delete(leastFreqKey)
+		c.Set(key, 1)
 	}
-
-	c.Delete(leastFreqKey)
-	c.Set(key, "1")
-
 	return c
 }
 
-func (c *Cache) MRU(key string) *Cache {
+func (c *Cache) MRU(key interface{}) *Cache {
 
 	if !c.IsCacheFull() || c.IsValueExists(key) {
 		c.Set(key)
@@ -137,12 +139,12 @@ func (c *Cache) MRU(key string) *Cache {
 	}
 
 	var recentTime time.Time
-	var delkey string
+	var delkey interface{}
 	m := c.GetAll()
 	for k, v := range m {
-		parsedTime, err := time.Parse(layout, v)
-		if err != nil {
-			fmt.Println(err)
+		parsedTime, ok := v.(time.Time)
+		if !ok {
+			panic(fmt.Errorf("Value %v is not a time format: %v\n", k, v))
 		}
 		if parsedTime.After(recentTime) {
 			recentTime = parsedTime

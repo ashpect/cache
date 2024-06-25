@@ -19,7 +19,7 @@ func main() {
 	fmt.Println(c.GetAll())
 
 	// Build standard cache using ConstructManual with initial map and size
-	m := map[string]string{
+	m := map[interface{}]interface{}{
 		"watches": "2021-01-01 00:00:00",
 		"shoes":   "2021-01-02 00:00:00",
 		"bags":    "2021-01-03 00:00:00",
@@ -60,6 +60,10 @@ func main() {
 	testingData = "bags"
 	c = NewPolicy(c, testingData)
 	fmt.Println(c.GetAll())
+
+	fmt.Println("LFU Examples")
+	ExampleLFU()
+
 }
 
 // BluePrint of how to define your policies
@@ -75,4 +79,37 @@ func NewPolicy(c *Cache, key string) *Cache {
 	// Value is optional if not given sets to time.Now()
 	c.Set(key)
 	return c
+}
+
+func ExampleLFU() {
+
+	// Classic LFU testing example
+	builder := NewCacheBuilder()
+	c := NewDirector(builder).ConstructEmpty()
+	incomingValue := []string{"bag", "laptop", "macbooks", "keys"}
+	for _, v := range incomingValue {
+		c = c.LFU(v)
+	}
+	fmt.Println(c.GetAll())
+
+	// LFU testing with variable types, creating a test type for generic testing
+	b := NewCacheBuilder()
+	d := NewDirector(b).ConstructEmpty()
+	testioArray := []testio{
+		{name: "test1", value: 1},
+		{name: "test2", value: 2},
+		{name: "test3", value: 3},
+		{name: "test4", value: 4},
+		{name: "test5", value: 5},
+	}
+	for _, v := range testioArray {
+		d = d.LFU(v)
+	}
+	fmt.Println(d.GetAll())
+
+}
+
+type testio struct {
+	name  string
+	value int
 }
