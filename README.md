@@ -18,4 +18,6 @@ The main cache storage is a map[string]string and methods, builder and director 
 
 ### Misc
 - [x] Implement example in main.go 
+- [ ] Do better error handling
 - [ ] Add tests for testing thread safety
+- [ ] Write code using go generics as well later

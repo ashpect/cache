@@ -6,14 +6,6 @@ import (
 	"time"
 )
 
-// Go generics but used interfaces cause it'll get dirty in methods
-// type AcceptedKeys interface {
-// 	int64
-// }
-
-// type AcceptedValues interface {
-// 	int64 | string
-// }
 
 type Cache struct {
 	cacheInitializationTime time.Time
@@ -23,10 +15,6 @@ type Cache struct {
 }
 
 func (c *Cache) Set(key interface{}, values ...interface{}) {
-	// if c.IsCacheFull() {
-	// 	fmt.Println("Cache is full, cannot add more values. Evict some before adding.")
-	// 	return
-	// }
 	var value interface{}
 	if len(values) > 0 {
 		value = values[0]
@@ -77,10 +65,7 @@ func (c *Cache) IsValueExists(key interface{}) bool {
 func (c *Cache) IsCacheFull() bool {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	// fmt.Println("Cache size: ", len(c.cache))
-	// fmt.Println("Max Cache size: ", c.maxCacheSize)
 	if len(c.cache) == c.maxCacheSize {
-		// fmt.Println("true")
 		return true
 	} else {
 		return false

@@ -14,7 +14,6 @@ func (c *Cache) LRU(key interface{}) *Cache {
 		return c
 	}
 
-	// The first value is the thing, example "watches", second is the time it was added.
 	var oldestTime time.Time
 	var delkey interface{}
 	m := c.GetAll()
@@ -71,7 +70,6 @@ func (c *Cache) LIFO(key interface{}) *Cache {
 func (c *Cache) FIFO(key interface{}) *Cache {
 
 	if c.IsValueExists(key) {
-		// Time not updated to 'access time', kept as the added time
 		return c
 	}
 
@@ -108,7 +106,6 @@ func (c *Cache) LFU(key interface{}) *Cache {
 		return c
 	}
 
-	// The first value is the thing, example "shoes", second is the frquency.
 	if !c.IsCacheFull() {
 		c.Set(key, 1)
 	} else {
